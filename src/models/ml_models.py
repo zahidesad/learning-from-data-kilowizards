@@ -1,15 +1,9 @@
-# ml_models.py
-
 import pickle
 import numpy as np
-
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+from xgboost import XGBRegressor
 
-try:
-    from xgboost import XGBRegressor
-except ImportError:
-    XGBRegressor = None
 
 from .base import BaseModel
 
