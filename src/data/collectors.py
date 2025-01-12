@@ -182,13 +182,27 @@ class WeatherBitCollector:
             "end_date": end_date.strftime("%Y-%m-%d"),
             "key": self.api_key
         }
-        resp = requests.get(self.base_url, params=params)
-        if resp.status_code != 200:
-            raise ConnectionError(f"WeatherBit isteğinde hata: {resp.status_code} - {resp.text}")
 
-        data_json = resp.json()
-        if "data" not in data_json:
-            return pd.DataFrame()  # O ay verisi yoksa boş dön
+        # Proxy tanımlama
+        proxies = {
+            "http": "http://qlnzmzfu:6ddw943q15iu@161.123.152.115:6360",
+            "https": "http://qlnzmzfu:6ddw943q15iu@161.123.152.115:6360"
+        } # Proxy URL varsa ekler
 
-        df = pd.DataFrame(data_json["data"])
-        return df
+        # HTTP isteği yapma
+        try:
+            resp = requests.get(self.base_url, params=params, proxies=proxies, timeout=10)
+            if resp.status_code != 200:
+                raise ConnectionError(f"WeatherBit isteğinde hata: {resp.status_code} - {resp.text}")
+
+            data_json = resp.json()
+            if "data" not in data_json:
+                return pd.DataFrame()  # O ay verisi yoksa boş dön
+
+            df = pd.DataFrame(data_json["data"])
+            return df
+
+        except requests.exceptions.ProxyError:
+            raise ConnectionError("Proxy sunucusuna bağlanılamadı. Lütfen proxy ayarlarını kontrol edin.")
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"HTTP isteği sırasında bir hata meydana geldi: {str(e)}")
