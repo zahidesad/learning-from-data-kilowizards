@@ -166,7 +166,7 @@ class WeatherBitCollector:
             chunk_start = chunk_end + timedelta(days=1)
 
         # Tüm parçaları birleştir
-        if df:
+        if df is not None:
             return df
         else:
             return pd.DataFrame()  # Eğer hiçbir veri yoksa boş bir DataFrame döndür
