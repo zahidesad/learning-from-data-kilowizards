@@ -142,7 +142,7 @@ class WeatherBitCollector:
         end_date = pd.to_datetime(end_date)
 
         # Başlangıç ve bitiş tarihleri arasında parçalar üret
-        df = pd.read_csv("weather_data_istanbul.csv")
+        df = pd.read_csv("weather_data_konya.csv")
         chunk_start = start_date
 
         while chunk_start < end_date:
@@ -158,7 +158,7 @@ class WeatherBitCollector:
             elif chunk_data is not None and not chunk_data.empty:
                 merged_df = pd.concat([df, chunk_data], ignore_index=True)
                 # save as csv
-                merged_df.to_csv(f"weather_data_istanbul.csv", index=False)
+                merged_df.to_csv(f"weather_data_konya.csv", index=False)
                 df = merged_df
 
 
