@@ -174,3 +174,13 @@ class DataPreprocessor:
             df[f"{target_col}_lag_{lag}"] = df[target_col].shift(lag)
         return df
 
+    def remove_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Veri setindeki duplicate (aynı) satırları siler.
+        Sadece ilk görülen satır korunur.
+
+        :param df: Giriş veri seti
+        :return: Duplicate satırlar silinmiş veri seti
+        """
+        return df.drop_duplicates(keep='first')
+

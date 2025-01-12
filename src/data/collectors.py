@@ -143,7 +143,7 @@ class WeatherBitCollector:
 
         # Başlangıç ve bitiş tarihleri arasında parçalar üret
         try:
-            df = pd.read_csv("weather_data_trabzon.csv")
+            df = pd.read_csv("weather_data_agri.csv")
         except:
             df = pd.DataFrame()
         chunk_start = start_date
@@ -161,7 +161,7 @@ class WeatherBitCollector:
             elif chunk_data is not None and not chunk_data.empty:
                 merged_df = pd.concat([df, chunk_data], ignore_index=True)
                 # save as csv
-                merged_df.to_csv(f"weather_data_trabzon.csv", index=False)
+                merged_df.to_csv(f"weather_data_agri.csv", index=False)
                 df = merged_df
 
 
@@ -188,8 +188,8 @@ class WeatherBitCollector:
 
         # Proxy tanımlama
         proxies = {
-            "http": "http://hxbfuuzt:8qr3ujm127rb@167.160.180.203:6754",
-            "https": "http://hxbfuuzt:8qr3ujm127rb@167.160.180.203:6754"
+            "http": "http://hxbfuuzt:8qr3ujm127rb@173.0.9.70:5653",
+            "https": "http://hxbfuuzt:8qr3ujm127rb@173.0.9.70:5653"
         } # Proxy URL varsa ekler
 
         # HTTP isteği yapma
