@@ -93,3 +93,96 @@ class WeatherBitCollector:
 
         df = pd.DataFrame(data_json["data"])
         return df
+
+    def fetch_year_data(self, year: int, month: int) -> pd.DataFrame:
+        # Ayın ilk ve son günü
+        start_date = datetime(year, month, 1)
+        end_date = datetime(year + 1, month, 1) - timedelta(days=1)
+
+        params = {
+            "lat": self.lat,
+            "lon": self.lon,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d"),
+            "key": self.api_key
+        }
+        resp = requests.get(self.base_url, params=params)
+        if resp.status_code != 200:
+            raise ConnectionError(f"WeatherBit isteğinde hata: {resp.status_code} - {resp.text}")
+
+        data_json = resp.json()
+        if "data" not in data_json:
+            return pd.DataFrame()  # O ay verisi yoksa boş dön
+
+        df = pd.DataFrame(data_json["data"])
+        return df
+
+    def fetch_data_in_chunks(self, start_date, end_date, freq='1Y'):
+        """
+        Veriyi parça parça çeker ve birleştirir.
+
+        Parameters:
+        -----------
+        fetch_function : function
+            Belirli tarih aralığında veri çeken işlev. (örn. API sorgusu yapan)
+        start_date : str or datetime
+            Başlangıç tarihi (format: 'YYYY-MM-DD').
+        end_date : str or datetime
+            Bitiş tarihi (format: 'YYYY-MM-DD').
+        freq : str
+            Çekim parçalarının boyutları ('1Y' -> yıllık, '1M' -> aylık).
+
+        Returns:
+        --------
+        pd.DataFrame
+            Çekilen ve birleştirilmiş veri.
+        """
+        # Tarihleri datetime objelerine dönüştür
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+
+        # Başlangıç ve bitiş tarihleri arasında parçalar üret
+        chunks = []
+        chunk_start = start_date
+
+        while chunk_start < end_date:
+            chunk_end = min(chunk_start + timedelta(days=30), end_date)
+
+            # Fetch (API'den veri çekme)
+            print(f"Fetching data from {chunk_start.date()} to {chunk_end.date()}...")
+            chunk_data = self.fetch_function(chunk_start, chunk_end)
+
+            # Eğer veri boş değilse listeye ekle
+            if chunk_data is not None and not chunk_data.empty:
+                chunks.append(chunk_data)
+
+            # Bir sonraki parçaya git
+            chunk_start = chunk_end + timedelta(days=1)
+
+        # Tüm parçaları birleştir
+        if chunks:
+            return pd.concat(chunks, ignore_index=True)
+        else:
+            return pd.DataFrame()  # Eğer hiçbir veri yoksa boş bir DataFrame döndür
+
+    def fetch_function(self, start_date, end_date):
+        """
+        Örneksel veri çekme işlevi. Gerçek çağrılar için API entegrasyonu yapılır.
+        """
+        params = {
+            "lat": self.lat,
+            "lon": self.lon,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d"),
+            "key": self.api_key
+        }
+        resp = requests.get(self.base_url, params=params)
+        if resp.status_code != 200:
+            raise ConnectionError(f"WeatherBit isteğinde hata: {resp.status_code} - {resp.text}")
+
+        data_json = resp.json()
+        if "data" not in data_json:
+            return pd.DataFrame()  # O ay verisi yoksa boş dön
+
+        df = pd.DataFrame(data_json["data"])
+        return df

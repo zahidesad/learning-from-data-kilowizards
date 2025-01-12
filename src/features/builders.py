@@ -1,10 +1,11 @@
+from typing import Literal
+
 import pandas as pd
-import numpy as np
 
 
 def merge_datasets(elec_df: pd.DataFrame, weather_df: pd.DataFrame,
                    time_key_elec='Tarih', time_key_weather='timestamp_local',
-                   how='left'):
+                   how: Literal["left", "right", "inner", "outer", "cross"] = "left"):
     """
     Merges the electricity dataset with the weather dataset on a time key.
 
@@ -71,7 +72,7 @@ def build_time_features(df: pd.DataFrame, datetime_col: str = 'Tarih'):
 
 def build_rolling_features(df: pd.DataFrame,
                            target_col: str = 'Smf',
-                           rolling_windows=[24, 48, 72],
+                           rolling_windows=(24, 48, 72),
                            groupby_col: str = None):
     """
     Adds rolling statistical features (mean, std, etc.) for the target column.
@@ -119,7 +120,7 @@ def build_rolling_features(df: pd.DataFrame,
     return df
 
 
-def build_lag_features(df: pd.DataFrame, target_col: str = 'Smf', lags=[1, 24]):
+def build_lag_features(df: pd.DataFrame, target_col: str = 'Smf', lags=(1, 24)):
     """
     Creates lag features (e.g. t-1, t-24, etc.) for the target variable.
 
