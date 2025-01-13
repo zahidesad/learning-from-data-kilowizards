@@ -28,7 +28,7 @@ def merge_datasets(elec_df: pd.DataFrame, weather_df: pd.DataFrame,
         The merged DataFrame containing electricity data and weather data
     """
     # Ensure both are datetime
-    elec_df[time_key_elec] = pd.to_datetime(elec_df[time_key_elec])
+    elec_df[time_key_elec] = pd.to_datetime(elec_df[time_key_elec], dayfirst=True)
     weather_df[time_key_weather] = pd.to_datetime(weather_df[time_key_weather])
 
     # Possibly round/truncate times if needed (e.g. weather data is hourly)
@@ -120,27 +120,20 @@ def build_rolling_features(df: pd.DataFrame,
     return df
 
 
-def build_lag_features(df: pd.DataFrame, target_col: str = 'Smf', lags=(1, 24)):
+def build_lag_features_multi(df, cols_to_lag, lags=(1, 24), time_col='Tarih'):
     """
-    Creates lag features (e.g. t-1, t-24, etc.) for the target variable.
-
-    Parameters:
-    -----------
-    df : pd.DataFrame
-    target_col : str
-    lags : list
-        Number of time steps to lag (1 -> previous hour, 24 -> previous day)
-
-    Returns:
-    --------
-    df : pd.DataFrame
-        The df with lag features appended
+    Creates lag features for each column in cols_to_lag.
+    For example, if cols_to_lag = ['Smf', 'Talepislemhacmi'] and lags = (1, 24),
+    it will create:
+      Smf_lag_1,  Smf_lag_24,
+      Talepislemhacmi_lag_1, Talepislemhacmi_lag_24.
     """
-    df = df.sort_values(by='Tarih')
+    df = df.sort_values(by=time_col)
 
-    for lag in lags:
-        df[f'{target_col}_lag_{lag}'] = df[target_col].shift(lag)
+    for col in cols_to_lag:
+        for lag in lags:
+            df[f'{col}_lag_{lag}'] = df[col].shift(lag)
 
-    # Optionally drop any rows that have NaN because of lag
+    # Optionally drop rows that have NaN from lagging
     df = df.dropna().reset_index(drop=True)
     return df
