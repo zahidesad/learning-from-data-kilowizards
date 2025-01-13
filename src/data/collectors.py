@@ -1,5 +1,3 @@
-# src/data/collectors.py
-
 import os
 import requests
 import pandas as pd
@@ -9,8 +7,8 @@ from typing import Optional, List
 
 class EPIASCollector:
     """
-    EPİAŞ verilerini toplamak için bir kolektör sınıfı.
-    Yerel CSV veya EPİAŞ Şeffaflık API'lerinden veri alabilir.
+    A collector class for retrieving EPİAŞ data.
+    It can fetch data from a local CSV file or EPİAŞ Transparency APIs.
     """
 
     def __init__(self, local_csv_path: Optional[str] = None, api_key: Optional[str] = None):
@@ -59,7 +57,7 @@ class EPIASCollector:
 
 class WeatherBitCollector:
     """
-    WeatherBit API'yi kullanarak alt saatlik hava durumu verisini (free tier 1 ay) çekmek için.
+    A class for retrieving sub-hourly weather data using the WeatherBit API
     """
 
     def __init__(self, api_key: str, lat: float, lon: float):
@@ -143,7 +141,7 @@ class WeatherBitCollector:
 
         # Başlangıç ve bitiş tarihleri arasında parçalar üret
         try:
-            df = pd.read_csv("weather_data_izmir.csv")
+            df = pd.read_csv("weather_data_test.csv")
         except:
             df = pd.DataFrame()
         chunk_start = start_date
@@ -161,7 +159,7 @@ class WeatherBitCollector:
             elif chunk_data is not None and not chunk_data.empty:
                 merged_df = pd.concat([df, chunk_data], ignore_index=True)
                 # save as csv
-                merged_df.to_csv(f"weather_data_izmir.csv", index=False)
+                merged_df.to_csv(f"weather_data_test.csv", index=False)
                 df = merged_df
 
 
@@ -188,8 +186,8 @@ class WeatherBitCollector:
 
         # Proxy tanımlama
         proxies = {
-            "http": "http://hxbfuuzt:8qr3ujm127rb@198.23.239.134:6540",
-            "https": "http://hxbfuuzt:8qr3ujm127rb@198.23.239.134:6540"
+            "http": "http://username:password@proxyaddress:port",
+            "https": "http://username:password@proxyaddress:port"
         } # Proxy URL varsa ekler
 
         # HTTP isteği yapma
