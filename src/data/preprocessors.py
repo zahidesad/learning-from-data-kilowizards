@@ -174,13 +174,17 @@ class DataPreprocessor:
             df[f"{target_col}_lag_{lag}"] = df[target_col].shift(lag)
         return df
 
-    def remove_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
+    def remove_duplicates(self, df: pd.DataFrame, column: str = 'timestamp_local') -> pd.DataFrame:
         """
-        Veri setindeki duplicate (aynı) satırları siler.
-        Sadece ilk görülen satır korunur.
+        Removes duplicate rows based on the specified column. Keeps the first occurrence of the duplicate value.
 
-        :param df: Giriş veri seti
-        :return: Duplicate satırlar silinmiş veri seti
+        Parameters:
+            df (pd.DataFrame): The input DataFrame.
+            column (str): The column to inspect for duplicate values. Default is 'timestamp_local'.
+
+        Returns:
+            pd.DataFrame: The DataFrame with duplicates removed.
         """
-        return df.drop_duplicates(keep='first')
+        # Drop duplicate rows based on the specified column
+        return df.drop_duplicates(subset=[column], keep='first')
 
