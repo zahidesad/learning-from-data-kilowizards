@@ -186,3 +186,44 @@ class DataPreprocessor:
         # Drop duplicate rows based on the specified column
         return df.drop_duplicates(subset=[column], keep='first')
 
+    def aggregate_to_hourly(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Veri setini saatlik veriye dönüştürür.
+        timestamp_utc kolonuna göre gruplama yapar.
+        Ortalamalarını alır, sayısal olmayan kolonların (ör. weather) ilk değerini alır.
+        Kolonların orijinal sırası korunur.
+
+        :param df: Giriş veri seti
+        :return: Saatlik olarak birleştirilmiş ve kolon sırası korunmuş veri seti
+        """
+        # Orijinal kolon sırasını kaydet
+        original_columns = df.columns.tolist()
+
+        # timestamp_utc ve timestamp_local'i datetime türüne çevir
+        df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'])
+        df['timestamp_local'] = pd.to_datetime(df['timestamp_local'])
+
+        # timestamp_utc'yi saatlik binlere yuvarla
+        df['hourly_timestamp_utc'] = df['timestamp_utc'].dt.floor('h')
+        df['hourly_timestamp_local'] = df['timestamp_local'].dt.floor('h')
+
+        # Sayısal ve sayısal olmayan kolonları ayır
+        numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+        non_numeric_columns = df.select_dtypes(exclude=[np.number, 'datetime']).columns.tolist()
+
+        # Aggregation: Sayısal kolonlar için ortalama, diğerleri için ilk değer
+        aggregated_df = df.groupby('hourly_timestamp_utc').agg({**{col: 'mean' for col in numeric_columns},
+                                                                **{col: 'first' for col in non_numeric_columns},
+                                                                'timestamp_local': 'first'}).reset_index()
+
+        # İsimleri güncelle
+        aggregated_df = aggregated_df.rename(columns={'hourly_timestamp_utc': 'timestamp_utc',
+                                                      'hourly_timestamp_local': 'timestamp_local'})
+
+        # Kolon sırasını orijinal sıraya göre düzenle
+        aggregated_df = aggregated_df[original_columns]
+
+        return aggregated_df
+
+
+
