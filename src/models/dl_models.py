@@ -64,15 +64,24 @@ class LSTMModel(BaseModel, nn.Module):
         self.to(device)
 
     def forward(self, x):
-        # x: (batch, seq_len, input_dim)
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
+        # Ensure x is 3D: (batch_size, seq_len, input_dim)
+        if len(x.shape) == 2:  # If x is 2D (seq_len, input_dim), add batch dimension
+            x = x.unsqueeze(0)  # Add batch size of 1 -> (1, seq_len, input_dim)
 
-        out, _ = self.lstm(x, (h0, c0))
-        # out: (batch, seq_len, hidden_dim)
-        # Take the last time step
-        out = out[:, -1, :]  # (batch, hidden_dim)
-        out = self.fc(out)  # (batch, output_dim)
+        # Initialize hidden states
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(
+            self.device)  # (num_layers, batch_size, hidden_dim)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(
+            self.device)  # (num_layers, batch_size, hidden_dim)
+
+        # LSTM forward pass
+        out, _ = self.lstm(x, (h0, c0))  # output shape: (batch_size, seq_len, hidden_dim)
+
+        # Take the output from the last time step
+        out = out[:, -1, :]  # shape: (batch_size, hidden_dim)
+
+        # Fully connected layer
+        out = self.fc(out)  # shape: (batch_size, output_dim)
         return out
 
     def fit(self, X, y, epochs=10, batch_size=32, lr=1e-3, verbose=True):

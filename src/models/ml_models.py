@@ -34,6 +34,14 @@ class RandomForestModel(BaseModel):
             raise ValueError("Model is not fitted. Call fit() first.")
         return self.model.predict(X)
 
+    def score(self, X, y):
+        """
+        Expose the score method from the underlying RandomForestRegressor.
+        """
+        if self.model is None:
+            raise ValueError("Model is not fitted. Call fit() first.")
+        return self.model.score(X, y)
+
     def save(self, path: str):
         with open(path, 'wb') as f:
             pickle.dump(self.model, f)
@@ -42,6 +50,14 @@ class RandomForestModel(BaseModel):
         with open(path, 'rb') as f:
             self.model = pickle.load(f)
 
+    @property
+    def feature_importances_(self):
+        """
+        Expose feature_importances_ from the underlying RandomForestRegressor.
+        """
+        if self.model is None:
+            raise ValueError("Model is not fitted. Train the model before accessing feature importances.")
+        return self.model.feature_importances_
 
 ########################################################
 # SVR
