@@ -225,5 +225,33 @@ class DataPreprocessor:
 
         return aggregated_df
 
+def preprocess_dataframe(
+    df: pd.DataFrame,
+    date_col: Optional[str] = None,
+    missing_method: str = 'mean',
+    outlier_cols: Optional[List[str]] = None,
+    outlier_method: str = 'iqr'
+) -> pd.DataFrame:
+    """
+    Minimal wrapper that uses DataPreprocessor to do basic steps:
+    - parse dates (optional)
+    - handle missing values (default 'mean')
+    - remove outliers (optional)
+    Modify or extend as you like.
+    """
+    dp = DataPreprocessor()
 
+    # 1) parse date column if provided
+    if date_col:
+        df = dp.parse_dates(df, date_col=date_col)
+
+    # 2) handle missing values
+    df = dp.handle_missing_values(df, method=missing_method)
+
+    # 3) remove outliers if columns are specified
+    if outlier_cols:
+        df = dp.remove_outliers(df, columns=outlier_cols, method=outlier_method)
+
+    # you can add more calls, like encode_categorical, scale_features, etc.
+    return df
 

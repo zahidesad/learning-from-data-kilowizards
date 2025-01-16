@@ -235,7 +235,9 @@ class ProphetModel(BaseModel):
             File path to save the model.
         """
         with open(path, 'wb') as f:
-            pickle.dump(self.model, f)
+            pickle.dump(
+
+                self.model, f)
 
     @classmethod
     def load(cls, path: str):

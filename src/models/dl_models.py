@@ -1,5 +1,3 @@
-# dl_models.py
-
 import torch
 import torch.nn as nn
 import torch.utils.data as data
@@ -66,43 +64,24 @@ class LSTMModel(BaseModel, nn.Module):
     def forward(self, x):
         # Ensure x is 3D: (batch_size, seq_len, input_dim)
         if len(x.shape) == 2:  # If x is 2D (seq_len, input_dim), add batch dimension
-            x = x.unsqueeze(0)  # Add batch size of 1 -> (1, seq_len, input_dim)
+            x = x.unsqueeze(0)  # -> (1, seq_len, input_dim)
 
         # Initialize hidden states
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(
-            self.device)  # (num_layers, batch_size, hidden_dim)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(
-            self.device)  # (num_layers, batch_size, hidden_dim)
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
 
         # LSTM forward pass
-        out, _ = self.lstm(x, (h0, c0))  # output shape: (batch_size, seq_len, hidden_dim)
+        out, _ = self.lstm(x, (h0, c0))  # (batch_size, seq_len, hidden_dim)
+        out = out[:, -1, :]  # last time step -> (batch_size, hidden_dim)
 
-        # Take the output from the last time step
-        out = out[:, -1, :]  # shape: (batch_size, hidden_dim)
-
-        # Fully connected layer
-        out = self.fc(out)  # shape: (batch_size, output_dim)
+        # Fully connected
+        out = self.fc(out)  # (batch_size, output_dim)
         return out
 
     def fit(self, X, y, epochs=10, batch_size=32, lr=1e-3, verbose=True):
-        """
-        Train the LSTM with a simple in-class training loop.
-        Parameters
-        ----------
-        X : np.ndarray or torch.Tensor
-            Shape (N, seq_len, input_dim).
-        y : np.ndarray or torch.Tensor
-            Shape (N,) or (N, output_dim).
-        epochs : int
-        batch_size : int
-        lr : float
-        verbose : bool
-        """
-        # Create DataLoader
         dataset = TimeSeriesDataset(X, y)
         dataloader = data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-        # Define optimizer and loss
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         criterion = nn.MSELoss()
 
@@ -114,10 +93,9 @@ class LSTMModel(BaseModel, nn.Module):
                 batch_y = batch_y.to(self.device)
 
                 optimizer.zero_grad()
-                outputs = self.forward(batch_X)  # (batch, output_dim)
+                outputs = self.forward(batch_X)
 
-                # If y is shape (batch,) and outputs is shape (batch,1),
-                # we can do outputs = outputs.squeeze(-1) to match shape.
+                # If y is shape (batch,) and outputs is shape (batch,1), match shape.
                 if len(batch_y.shape) == 1 and outputs.shape[-1] == 1:
                     outputs = outputs.squeeze(-1)
 
@@ -136,7 +114,6 @@ class LSTMModel(BaseModel, nn.Module):
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32)
         X = X.to(self.device)
-
         with torch.no_grad():
             outputs = self.forward(X)
         return outputs.cpu().numpy()
@@ -182,9 +159,8 @@ class GRUModel(BaseModel, nn.Module):
         # x: (batch, seq_len, input_dim)
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(self.device)
 
-        out, _ = self.gru(x, h0)
-        # out: (batch, seq_len, hidden_dim)
-        out = out[:, -1, :]  # last time step
+        out, _ = self.gru(x, h0)  # (batch, seq_len, hidden_dim)
+        out = out[:, -1, :]       # last time step
         out = self.fc(out)
         return out
 
@@ -223,7 +199,6 @@ class GRUModel(BaseModel, nn.Module):
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32)
         X = X.to(self.device)
-
         with torch.no_grad():
             outputs = self.forward(X)
         return outputs.cpu().numpy()
@@ -271,10 +246,9 @@ class BiLSTMModel(BaseModel, nn.Module):
         h0 = torch.zeros(self.num_layers*2, x.size(0), self.hidden_dim).to(self.device)
         c0 = torch.zeros(self.num_layers*2, x.size(0), self.hidden_dim).to(self.device)
 
-        out, _ = self.lstm(x, (h0, c0))
-        # out: (batch, seq_len, 2*hidden_dim)
-        out = out[:, -1, :]  # last time step => shape: (batch, 2*hidden_dim)
-        out = self.fc(out)   # (batch, output_dim)
+        out, _ = self.lstm(x, (h0, c0))  # (batch, seq_len, 2*hidden_dim)
+        out = out[:, -1, :]             # last time step
+        out = self.fc(out)              # (batch, output_dim)
         return out
 
     def fit(self, X, y, epochs=10, batch_size=32, lr=1e-3, verbose=True):
@@ -312,7 +286,6 @@ class BiLSTMModel(BaseModel, nn.Module):
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32)
         X = X.to(self.device)
-
         with torch.no_grad():
             outputs = self.forward(X)
         return outputs.cpu().numpy()
@@ -323,7 +296,6 @@ class BiLSTMModel(BaseModel, nn.Module):
     def load(self, path: str):
         self.load_state_dict(torch.load(path, map_location=self.device))
         self.eval()
-
 
 
 ########################################
@@ -370,8 +342,7 @@ class TransformerModel(nn.Module):
         src_embedded = self.input_embedding(src)  # (batch, src_seq_len, d_model)
         tgt_embedded = self.input_embedding(tgt)  # (batch, tgt_seq_len, d_model)
 
-        out = self.transformer(src_embedded, tgt_embedded)
-        # out shape: (batch, tgt_seq_len, d_model)
+        out = self.transformer(src_embedded, tgt_embedded)  # (batch, tgt_seq_len, d_model)
         out = self.fc_out(out)  # => (batch, tgt_seq_len, output_dim)
         return out
 
@@ -379,8 +350,8 @@ class TransformerModel(nn.Module):
         """
         A basic fit method for a Transformer example:
 
-        src: shape (N, src_seq_len, input_dim)
-        tgt: shape (N, tgt_seq_len, input_dim)
+        src:  shape (N, src_seq_len, input_dim)
+        tgt:  shape (N, tgt_seq_len, input_dim)
         tgt_y: shape (N, tgt_seq_len, output_dim) or (N, tgt_seq_len)
 
         For simplicity, we combine (src, tgt, tgt_y) into a single Dataset.
@@ -392,7 +363,6 @@ class TransformerModel(nn.Module):
         if not isinstance(tgt_y, torch.Tensor):
             tgt_y = torch.tensor(tgt_y, dtype=torch.float32)
 
-        # A custom dataset for Transformer
         class TransformerDataset(data.Dataset):
             def __init__(self, s, t, ty):
                 self.s = s
@@ -421,10 +391,8 @@ class TransformerModel(nn.Module):
 
                 optimizer.zero_grad()
                 outputs = self.forward(batch_src, batch_tgt)
-                # outputs shape: (batch, tgt_seq_len, output_dim)
-                # batch_tgt_y shape: (batch, tgt_seq_len, output_dim) or (batch, tgt_seq_len)
+                # outputs: (batch, tgt_seq_len, output_dim)
 
-                # If batch_tgt_y is (batch, tgt_seq_len), we might need to unsqueeze last dim
                 if len(batch_tgt_y.shape) == 2 and outputs.shape[-1] == 1:
                     batch_tgt_y = batch_tgt_y.unsqueeze(-1)
 
@@ -436,7 +404,7 @@ class TransformerModel(nn.Module):
 
             epoch_loss /= len(dataloader.dataset)
             if verbose:
-                print(f"Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss:.4f}")
+                print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
 
     def predict(self, src, tgt):
         self.eval()
